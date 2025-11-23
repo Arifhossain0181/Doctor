@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { APPContext } from "../Context/APPContext.jsx";
 import { assets } from "../assets/assets.js";
 import { motion } from "framer-motion";
-
+import RelatedDoctors from "../ComPonent/RelatedDoctors.jsx";
 const Appointment = () => {
   const { docId } = useParams();
   const daysarray = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -151,8 +151,26 @@ const Appointment = () => {
           }
         </div>
 
+          <div className="flex items-center gap-3 w-full overflow-x-scroll mt-4">
+            {
+              docslots.length && docslots[slotindex].map((item, index) => (
+                <p 
+                  onClick={() => setSlotime(item.time)}
+                  className={`text-sm font-light shrink-0 px-5 py-2 rounded-full cursor-pointer ${item.time === slotime ? 'bg-primary text-white' : 'text-gray-400 border border-gray-300'}`} 
+                  key={index}
+                >
+                  {item.time.toLowerCase()}
+                </p>
+              ))
+            }
+          </div>
+          <div>
+            <button className="bg-primary text-white text-sm font-light px-3 py-3 rounded-full ">Book Appointment</button>
+          </div>
       </div>
 
+{/* Related Doctors Section */
+}    <RelatedDoctors docId={docinfo.id} speciality={docinfo.speciality} />
     </motion.div>
   );
 };

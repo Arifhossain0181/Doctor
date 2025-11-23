@@ -1,15 +1,24 @@
 import React from 'react';
-import { doctors } from '../assets/assets';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useContext } from 'react';
 import { APPContext } from '../Context/APPContext.jsx';
-const TopDoctors = () => {
-  const navigate = useNavigate();
-  const { doctors } =useContext(APPContext);
+import { useState } from 'react';
+import { useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+const RelatedDoctors = ({ docId, speciality }) => {
+     const {doctors} = useContext(APPContext);
+     const [relateddoc ,setrelateddoc] = useState([]);
+     const navigate = useNavigate();
 
-  return (
-    <div className="flex flex-col items-center gap-4 my-16 text-gray-900 px-4 md:px-10">
+     useEffect(()=>{
+        if(doctors.length >0 && speciality){
+            const doctrsdata = doctors.filter(doc => doc.speciality === speciality && doc._id !== docId);
+            setrelateddoc(doctrsdata);
+        }
+
+    },[docId, speciality,doctors])
+    return (
+        <div className="flex flex-col items-center gap-4 my-16 text-gray-900 px-4 md:px-10">
       
       {/* Heading Section */}
       <motion.h1 
@@ -32,7 +41,7 @@ const TopDoctors = () => {
 
       {/* Doctors Grid */}
       <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-10">
-        {doctors.slice(0, 10).map((doctor, index) => (
+        {relateddoc.slice(0, 5).map((doctor, index) => (
           <motion.div
             key={index}
             whileHover={{ y: -10 }}
@@ -65,13 +74,13 @@ const TopDoctors = () => {
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.98 }}
-        onClick={() => { navigate('/doctor'); scrollTo(0, 0); }}
+        onClick={() => { navigate('/doctors'); scrollTo(0, 0); }}
         className="bg-blue-50 text-gray-700 px-12 py-3 rounded-full mt-10 border border-blue-300"
       >
         More
       </motion.button>
     </div>
-  );
+    );
 };
 
-export default TopDoctors;
+export default RelatedDoctors;
