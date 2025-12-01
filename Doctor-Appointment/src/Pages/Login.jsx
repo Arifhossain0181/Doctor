@@ -1,7 +1,12 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-
+import { APPContext } from "../Context/APPContext";
+import { useContext } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
 const Login = () => {
+
+  const { token, setToken, backendURL } = useContext(APPContext);
   const [state, setState] = useState("sign up");
   const [email, setemail] = useState("");
   const [password, setpassword] = useState("");
@@ -9,6 +14,42 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    try{
+
+      if(state === "sign up"){
+        const response = await axios.post(backendURL + "/api/user/register", {
+          name,
+          email,
+          password,
+        });
+        if(response.data.success){
+          localStorage.setItem("token", response.data.token);
+          setToken(response.data.token);
+          toast.success("Registration successful!");
+        }
+        else{
+          toast.error(response.data.message);
+        }
+      }
+      else{
+        const response = await axios.post(backendURL + "/api/user/login", {
+          email,
+          password,
+        });
+        if(response.data.success){
+          localStorage.setItem("token", response.data.token);
+          setToken(response.data.token);
+          toast.success("Login successful!");
+        }
+        else{
+          toast.error(response.data.message);
+        }
+      }
+    }
+    catch (error) {
+      console.error("Error during authentication:", error);
+    }
   };
 
   return (
@@ -88,9 +129,13 @@ const Login = () => {
 
         {/* Submit Button */}
         <motion.button
+        type="submit"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
           whileTap={{ scale: 0.95 }}
           className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
-          type="submit"
+          
         >
           {state === "sign up" ? "Create Account" : "Login"}
         </motion.button>
