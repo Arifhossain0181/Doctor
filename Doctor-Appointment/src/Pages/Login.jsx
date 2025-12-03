@@ -4,6 +4,9 @@ import { APPContext } from "../Context/APPContext";
 import { useContext } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+
 const Login = () => {
 
   const { token, setToken, backendURL } = useContext(APPContext);
@@ -11,6 +14,7 @@ const Login = () => {
   const [email, setemail] = useState("");
   const [password, setpassword] = useState("");
   const [name, setname] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,9 +28,12 @@ const Login = () => {
           password,
         });
         if(response.data.success){
-          localStorage.setItem("token", response.data.token);
-          setToken(response.data.token);
-          toast.success("Registration successful!");
+          toast.success("Registration successful! Please login.");
+          setState("login");
+          // Clear form fields
+          setname("");
+          setemail("");
+          setpassword("");
         }
         else{
           toast.error(response.data.message);
@@ -51,6 +58,11 @@ const Login = () => {
       console.error("Error during authentication:", error);
     }
   };
+  useEffect(() => {
+    if (token) {
+      navigate("/");
+    }
+  }, [token, navigate]);
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 bg-gray-100">

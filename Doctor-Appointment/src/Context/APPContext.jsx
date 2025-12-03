@@ -13,7 +13,7 @@ const APPContextProvider = ({children}) => {
 
 
   const [doctors, setDoctors] = useState(localDoctors);
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem("token")? localStorage.getItem("token") : false);
   const backendURL = import.meta.env.VITE_BACKEND_URL;
 
   const getdoctordata = async () => {
@@ -32,8 +32,8 @@ const APPContextProvider = ({children}) => {
     }
   }
   useEffect(() => {
-    // Only fetch from backend if URL is properly configured and not localhost
-    if(backendURL && !backendURL.includes('localhost')) {
+    // Fetch from backend if URL is configured
+    if(backendURL) {
       getdoctordata();
     }
   }, []);
