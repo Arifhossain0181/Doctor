@@ -1,204 +1,209 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { motion } from "framer-motion";
-import { assets } from "../assets/assets.js";
-import { useContext } from "react";
-import { APPContext } from "../Context/APPContext.jsx";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { APPContext } from "../Context/APPContext";
+import { assets } from "../assets/assets";
 
 const MyProfile = () => {
-  const {userData, setuseData} = useContext(APPContext);
-  
+  const { userData, setuseData, token, loaduserPRofiledata, backendURL } =
+    useContext(APPContext);
 
   const [isEditing, setIsEditing] = useState(false);
   const [image, setImage] = useState(null);
 
   if (!userData) {
-    return (
-      <div className="max-w-3xl mx-auto p-5 text-center">
-        <p className="text-gray-500">Loading profile...</p>
-      </div>
-    );
+    return <p className="text-center mt-10">Loading profile...</p>;
   }
+
+  /* ================= UPDATE PROFILE ================= */
+  const updateProfile = async () => {
+    try {
+      const formData = new FormData();
+
+      formData.append("name", userData.name);
+      formData.append("phone", userData.phone);
+      formData.append("dob", userData.dob);
+      formData.append("gender", userData.gender);
+      formData.append(
+        "address",
+        JSON.stringify({
+          line1: userData.address.line1,
+          line2: userData.address.line2,
+        })
+      );
+
+      if (image) formData.append("image", image);
+
+      const { data } = await axios.put(
+        `${backendURL}/api/user/update-profile`,
+        formData,
+        {
+          headers: {
+            token,
+          },
+        }
+      );
+
+      if (data.success) {
+        toast.success("Profile updated successfully");
+        setIsEditing(false);
+        setImage(null);
+        loaduserPRofiledata();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Profile update failed");
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto p-5">
-      {/* Profile Image + Name */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="flex flex-col items-center bg-white shadow-lg p-6 rounded-2xl"
-      >
-        <label htmlFor="image" className="cursor-pointer relative">
-          <img
-            src={image ? URL.createObjectURL(image) : userData.image || assets.profile_pic}
-            alt={userData.name}
-            className="w-32 h-32 rounded-full object-cover shadow-lg"
-          />
-          {isEditing && (
+      {/* ================= PROFILE CARD ================= */}
+      <motion.div className="bg-white p-6 rounded-2xl shadow-lg flex flex-col items-center">
+        {isEditing ? (
+          <label htmlFor="image" className="cursor-pointer relative">
+            <img
+              src={
+                image
+                  ? URL.createObjectURL(image)
+                  : userData.image || assets.userProfile
+              }
+              className="w-32 h-32 rounded-full object-cover opacity-80"
+            />
             <img
               src={assets.upload_icon}
-              alt="Upload"
-              className="w-8 absolute bottom-0 right-0 bg-white rounded-full p-1"
+              className="w-8 absolute bottom-2 right-2 bg-white rounded-full p-1"
             />
-          )}
-        </label>
-        {isEditing && (
-          <input
-            type="file"
-            id="image"
-            hidden
-            accept="image/*"
-            onChange={(e) => setImage(e.target.files[0])}
+            <input
+              type="file"
+              hidden
+              id="image"
+              accept="image/*"
+              onChange={(e) => setImage(e.target.files[0])}
+            />
+          </label>
+        ) : (
+          <img
+            src={userData.image || assets.userProfile}
+            className="w-32 h-32 rounded-full object-cover border"
           />
         )}
 
+        {/* NAME */}
         <div className="mt-4 w-full text-center">
           {isEditing ? (
             <input
-              type="text"
-              className="border px-3 py-2 rounded w-full text-center"
+              className="border rounded px-3 py-2 w-full text-center"
               value={userData.name}
               onChange={(e) =>
                 setuseData((prev) => ({ ...prev, name: e.target.value }))
               }
             />
           ) : (
-            <h1 className="text-2xl font-bold">{userData.name}</h1>
+            <h2 className="text-2xl font-bold">{userData.name}</h2>
           )}
         </div>
       </motion.div>
 
-      <hr className="my-6" />
+      {/* ================= CONTACT ================= */}
+      <div className="bg-white p-6 mt-6 rounded-2xl shadow-lg">
+        <h3 className="font-bold mb-4">Contact Information</h3>
 
-      {/* CONTACT INFORMATION */}
-      <motion.div
-        initial={{ x: -40, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        className="bg-white shadow-lg p-6 rounded-2xl"
-      >
-        <h5 className="font-bold text-lg mb-3">CONTACT INFORMATION</h5>
+        <p className="text-gray-500">Email</p>
+        <p>{userData.email}</p>
 
-        <div className="grid md:grid-cols-2 gap-5">
-          {/* EMAIL */}
-          <div>
-            <span className="text-gray-500 text-sm">Email:</span>
-            <h5 className="text-lg">{userData.email}</h5>
-          </div>
+        <p className="mt-3 font-semibold">Phone</p>
+        {isEditing ? (
+          <input
+            className="border rounded px-3 py-2 w-full"
+            value={userData.phone}
+            onChange={(e) =>
+              setuseData((prev) => ({ ...prev, phone: e.target.value }))
+            }
+          />
+        ) : (
+          <p>{userData.phone}</p>
+        )}
 
-          {/* PHONE */}
-          <div>
-            <h4 className="font-semibold">Phone</h4>
-            {isEditing ? (
-              <input
-                type="text"
-                className="border px-3 py-2 rounded w-full"
-                value={userData.phone}
-                onChange={(e) =>
-                  setuseData((prev) => ({ ...prev, phone: e.target.value }))
-                }
-              />
-            ) : (
-              <h5 className="text-lg">{userData.phone}</h5>
-            )}
-          </div>
+        <p className="mt-3 font-semibold">Address</p>
+        {isEditing ? (
+          <>
+            <input
+              className="border rounded px-3 py-2 w-full mb-2"
+              value={userData.address.line1}
+              onChange={(e) =>
+                setuseData((prev) => ({
+                  ...prev,
+                  address: { ...prev.address, line1: e.target.value },
+                }))
+              }
+            />
+            <input
+              className="border rounded px-3 py-2 w-full"
+              value={userData.address.line2}
+              onChange={(e) =>
+                setuseData((prev) => ({
+                  ...prev,
+                  address: { ...prev.address, line2: e.target.value },
+                }))
+              }
+            />
+          </>
+        ) : (
+          <p>
+            {userData.address.line1}, {userData.address.line2}
+          </p>
+        )}
+      </div>
 
-          {/* ADDRESS */}
-          <div className="md:col-span-2">
-            <h4 className="font-semibold">Address</h4>
-            {isEditing ? (
-              <div className="grid gap-3">
-                <input
-                  type="text"
-                  className="border px-3 py-2 rounded"
-                  value={userData.address.line1}
-                  onChange={(e) =>
-                    setuseData((Prev) => ({
-                      ...Prev,
-                      address: { ...Prev.address, line1: e.target.value },
-                    }))
-                  }
-                />
-                <input
-                  type="text"
-                  className="border px-3 py-2 rounded"
-                  value={userData.address.line2}
-                  onChange={(e) =>
-                    setuseData((Prev) => ({
-                      ...Prev,
-                      address: { ...Prev.address, line2: e.target.value },
-                    }))
-                  }
-                />
-              </div>
-            ) : (
-              <p className="text-lg">
-                {userData.address.line1}, {userData.address.line2}
-              </p>
-            )}
-          </div>
-        </div>
-      </motion.div>
+      {/* ================= BASIC INFO ================= */}
+      <div className="bg-white p-6 mt-6 rounded-2xl shadow-lg">
+        <h3 className="font-bold mb-4">Basic Information</h3>
 
-      <hr className="my-6" />
+        <p className="font-semibold">Gender</p>
+        {isEditing ? (
+          <select
+            className="border rounded px-3 py-2 w-full"
+            value={userData.gender}
+            onChange={(e) =>
+              setuseData((prev) => ({ ...prev, gender: e.target.value }))
+            }
+          >
+            <option>Male</option>
+            <option>Female</option>
+          </select>
+        ) : (
+          <p>{userData.gender}</p>
+        )}
 
-      {/* BASIC INFORMATION */}
-      <motion.div
-        initial={{ x: 40, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        className="bg-white shadow-lg p-6 rounded-2xl"
-      >
-        <h5 className="font-bold text-lg mb-3">BASIC INFORMATION</h5>
+        <p className="font-semibold mt-3">Date of Birth</p>
+        {isEditing ? (
+          <input
+            type="date"
+            className="border rounded px-3 py-2 w-full"
+            value={userData.dob}
+            onChange={(e) =>
+              setuseData((prev) => ({ ...prev, dob: e.target.value }))
+            }
+          />
+        ) : (
+          <p>{userData.dob}</p>
+        )}
+      </div>
 
-        <div className="grid md:grid-cols-2 gap-5">
-          {/* GENDER */}
-          <div>
-            <h4 className="font-semibold">Gender</h4>
-            {isEditing ? (
-              <select
-                className="border px-3 py-2 rounded w-full"
-                value={userData.gender}
-                onChange={(e) =>
-                  setuseData((Prev) => ({ ...Prev, gender: e.target.value }))
-                }
-              >
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-              </select>
-            ) : (
-              <h5 className="text-lg">{userData.gender}</h5>
-            )}
-          </div>
-
-          {/* DOB */}
-          <div>
-            <h4 className="font-semibold">Birthday</h4>
-            {isEditing ? (
-              <input
-                type="date"
-                className="border px-3 py-2 rounded w-full"
-                value={userData.dob}
-                onChange={(e) =>
-                  setuseData((prev) => ({ ...prev, dob: e.target.value }))
-                }
-              />
-            ) : (
-              <h5 className="text-lg">{userData.dob}</h5>
-            )}
-          </div>
-        </div>
-      </motion.div>
-
-      {/* BUTTON */}
+      {/* ================= BUTTON ================= */}
       <div className="flex justify-center mt-8">
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          whileHover={{ scale: 1.05 }}
-          className={`px-6 py-3 rounded-xl text-white font-semibold shadow-lg ${
+        <button
+          onClick={() => (isEditing ? updateProfile() : setIsEditing(true))}
+          className={`px-6 py-3 rounded-xl text-white font-semibold ${
             isEditing ? "bg-green-600" : "bg-blue-600"
           }`}
-          onClick={() => setIsEditing(!isEditing)}
         >
-          {isEditing ? "Save" : "Edit Profile"}
-        </motion.button>
+          {isEditing ? "Save Profile" : "Edit Profile"}
+        </button>
       </div>
     </div>
   );

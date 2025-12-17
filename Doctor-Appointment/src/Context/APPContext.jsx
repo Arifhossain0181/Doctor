@@ -18,13 +18,31 @@ const APPContextProvider = ({ children }) => {
   const getdoctordata = async () => {
     try {
       const { data } = await axios.get(backendURL + `/api/doctor/list`);
-      if (data?.success) {
-        setDoctors(data?.doctors);
-        return data?.doctors;
+      if (data?.success && data?.doctors && data.doctors.length > 0) {
+        console.log("Loaded doctors from MongoDB:", data.doctors.length);
+        
+        // Process doctors data to ensure proper format
+        const processedDoctors = data.doctors.map(doctor => {
+          // Parse address if it's a string
+          if (doctor.address && typeof doctor.address === 'string') {
+            try {
+              doctor.address = JSON.parse(doctor.address);
+            } catch (e) {
+              console.warn("Could not parse address for doctor:", doctor._id);
+            }
+          }
+          return doctor;
+        });
+        
+        setDoctors(processedDoctors);
+        return processedDoctors;
       } else {
-        toast.error(data?.message);
+        console.log("Using local doctors data");
+        setDoctors(localDoctors);
+        toast.error(data?.message || "No doctors found in database");
       }
     } catch (error) {
+      console.log("Failed to fetch from backend, using local data:", error.message);
       // Silently use local data as fallback
       setDoctors(localDoctors);
     }
@@ -33,6 +51,9 @@ const APPContextProvider = ({ children }) => {
     // Fetch from backend if URL is configured
     if (backendURL) {
       getdoctordata();
+    } else {
+      console.log("No backend URL configured, using local data");
+      setDoctors(localDoctors);
     }
   }, []);
    const loaduserPRofiledata = async () => {
