@@ -4,15 +4,29 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const MyAPPointment = () => {
-  const { backendURL, token } = useContext(APPContext);
+  const { backendURL, token,getdoctordata } = useContext(APPContext);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const month =[" ","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const month = [
+    " ",
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
 
   const slotdateformate = (slotdate) => {
     const dateArry = slotdate.split("_");
-    return dateArry[0]+ " " +month[Number(dateArry[1])] +" " + dateArry[2]
-  }
+    return dateArry[0] + " " + month[Number(dateArry[1])] + " " + dateArry[2];
+  };
 
   const getUserAppointments = async () => {
     try {
@@ -35,6 +49,30 @@ const MyAPPointment = () => {
       setLoading(false);
     }
   };
+  const cancelledAPPointments = async(appointmentId) =>{
+    try{
+      const{data } = await axios.post(
+        `${backendURL}/api/user/cancel-appointment`,
+        { appointmentId },
+        {
+          headers: { token },
+        }
+      );
+      if(data.success){
+        toast.success("Appointment cancelled successfully");
+        getUserAppointments();
+        getdoctordata()
+      }
+      else{
+        toast.error(data.message || "Failed to cancel appointment");
+      }
+     }
+    catch(error){
+      console.error("Error cancelling appointment:", error);
+      toast.error("Failed to cancel appointment");
+    }
+
+  }
 
   useEffect(() => {
     if (token) {
@@ -105,8 +143,8 @@ const MyAPPointment = () => {
                 {/* Date & Time */}
                 <p className="mt-2 text-sm text-gray-700">
                   <span className="font-medium">Date & Time:</span>{" "}
-                  
-                  {slotdateformate(appointment.slotDate)} , {appointment.slotTime}
+                  {slotdateformate(appointment.slotDate)} ,{" "}
+                  {appointment.slotTime}
                 </p>
 
                 {/* Amount */}
@@ -123,13 +161,9 @@ const MyAPPointment = () => {
                       Completed
                     </span>
                   ) : appointment.cancelled ? (
-                    <span className="text-red-500 font-medium">
-                      Cancelled
-                    </span>
+                    <span className="text-red-500 font-medium">Cancelled</span>
                   ) : (
-                    <span className="text-blue-600 font-medium">
-                      Scheduled
-                    </span>
+                    <span className="text-blue-600 font-medium">Scheduled</span>
                   )}
                 </p>
 
@@ -142,10 +176,11 @@ const MyAPPointment = () => {
                   )}
 
                   {!appointment.cancelled && (
-                    <button className="px-5 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
+                    <button onClick={() => cancelledAPPointments(appointment._id)} className="px-5 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
                       Cancel Appointment
                     </button>
                   )}
+                 
                 </div>
               </div>
             </div>
