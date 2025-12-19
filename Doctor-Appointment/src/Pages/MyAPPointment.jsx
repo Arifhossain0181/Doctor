@@ -3,8 +3,9 @@ import { APPContext } from "../Context/APPContext.jsx";
 import axios from "axios";
 import { toast } from "react-toastify";
 
+
 const MyAPPointment = () => {
-  const { backendURL, token,getdoctordata } = useContext(APPContext);
+  const { backendURL, token, getdoctordata } = useContext(APPContext);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const month = [
@@ -49,30 +50,68 @@ const MyAPPointment = () => {
       setLoading(false);
     }
   };
-  const cancelledAPPointments = async(appointmentId) =>{
-    try{
-      const{data } = await axios.post(
+  const cancelledAPPointments = async (appointmentId) => {
+    try {
+      const { data } = await axios.post(
         `${backendURL}/api/user/cancel-appointment`,
         { appointmentId },
         {
           headers: { token },
         }
       );
-      if(data.success){
+      if (data.success) {
         toast.success("Appointment cancelled successfully");
         getUserAppointments();
-        getdoctordata()
-      }
-      else{
+        getdoctordata();
+      } else {
         toast.error(data.message || "Failed to cancel appointment");
       }
-     }
-    catch(error){
+    } catch (error) {
       console.error("Error cancelling appointment:", error);
       toast.error("Failed to cancel appointment");
     }
+  };
+  const initPya =(order)=>{
+    const options = {
+      key:import.meta.env.VITE_RAZORPAY_KEY_ID,
+      amount: order.amount,
+      currency: order.currency,
+      name: "Doctor Appointment",
+      description: "Appointment Payment",
+      order_id: order.id,
+      receipt:order.receipt,
+      handler: async (response)=> {
+            console.log(response)         
+      }
+    }
+ const rzp1 = new window.Razorpay(options);
+ rzp1.open();
+  }
+  const appointmentRazorpay = async (appointmentId) => {
+    try{
+      const {data} = await axios.post(
+        `${backendURL}/api/user/Payment`,
+        { appointmentId },
+        {
+          headers: { token },
+        }
+      )
+      console.log("bankend res", data)
+      if(!data.success){
+        
+        return toast.error(data.message || "Payment initiation failed");
+      }
+      initPya(data.order);
+       console.log(data.order)
+    }
+    catch(error){
+      console.error("Error in payment process:", error);
+      toast.error("Payment process failed");
+
+    }
 
   }
+
 
   useEffect(() => {
     if (token) {
@@ -170,17 +209,19 @@ const MyAPPointment = () => {
                 {/* Buttons */}
                 <div className="flex gap-3 mt-4">
                   {!appointment.payment && !appointment.cancelled && (
-                    <button className="px-5 py-2 bg-primary text-white rounded-md hover:bg-blue-700">
+                    <button onClick={() =>appointmentRazorpay(appointment._id)} className="px-5 py-2 bg-primary text-white rounded-md hover:bg-blue-700">
                       Pay Online
                     </button>
                   )}
 
                   {!appointment.cancelled && (
-                    <button onClick={() => cancelledAPPointments(appointment._id)} className="px-5 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
+                    <button
+                      onClick={() => cancelledAPPointments(appointment._id)}
+                      className="px-5 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                    >
                       Cancel Appointment
                     </button>
                   )}
-                 
                 </div>
               </div>
             </div>
